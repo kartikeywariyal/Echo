@@ -1,4 +1,0 @@
-Name: Abhishek Barya
-Roll No: IIT2025040
-College: IIITA
-GitHub: https://github.com/abhishekbaryaiiita

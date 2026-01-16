@@ -10,7 +10,7 @@ server/node_modules/
 .idea/
 *.swp
 *.swo
-
+node_modules
 # OS
 .DS_Store
 Thumbs.db

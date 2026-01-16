@@ -1,9 +1,0 @@
-Name: Krishna Sikheriya
-Enrollment Number: IIT2023139
-College: IIITA
-
-About Me:
-I am an enthusiastic developer participating in OpenCode to dive deeper into open-source software. I'm currently exploring the Echo tech stack and looking forward to collaborating with the community. 
-
-Favorite Dinosaur:
-Ankylosaurus (Because having a built-in club tail is objectively cool).

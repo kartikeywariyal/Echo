@@ -1,75 +1,39 @@
-/**
- * WebSocket Server for Echo
- *
- * - Accepts client connections
- * - First message from client is treated as username
- * - Broadcasts join/leave messages to all connected clients
- * - Logs all connections and disconnections with timestamps
- */
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
+const PORT = 8080;
 
-const WebSocket = require("ws");
+app.get('/', (req, res) => {
+    res.end('Server is running')
+})
+io.on('connection', (socket) => {
+    socket.on('join', (username) => {
+        socket.name = username;
+        console.log(`Client joined as ${username} at ${new Date().toLocaleString()}`);
+        io.emit('system', `[${new Date().toLocaleString()}] Client connected`);
 
-const PORT = process.env.PORT || 8080;
-
-// Create WebSocket server
-const wss = new WebSocket.Server({ port: PORT });
-
-// Map to store connected clients and their usernames
-const clients = new Map();
-
-function getTimestamp() {
-  return new Date().toLocaleString();
-}
-
-wss.on("connection", (ws) => {
-  // first message from client as username
-  ws.once("message", (message) => {
-    const username = message.toString().trim();
-
-    // store username for this client
-    clients.set(ws, username);
-    console.log(`[${getTimestamp()}] ${username} joined`);
-
-    // Notify all connected clients
-    wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(`${username} has joined`);
-      }
     });
 
-    // NOW set up the message handler for subsequent messages
-    // This ensures username message is not processed twice
-    ws.on("message", (message) => {
-      const text = message.toString().trim();
-      const username = clients.get(ws);
-      const time = getTimestamp();
-
-      // Formatting message
-      const finalMessage = `${time}: ${username} said: ${text}`;
-
-      // Broadcasting to all connected clients
-      wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(finalMessage);
+    socket.on('message', (msg) => {
+        if (!socket.name) {
+            socket.name = msg;
+            return;
         }
-      });
+        console.log(`Message received: ${msg} at ${new Date().toLocaleString()}`);
+        io.emit('message', `[${new Date().toLocaleString()}] ${socket.name}: ${msg}`);
     });
-  });
 
-  // client disconnection
-  ws.on("close", () => {
-    const username = clients.get(ws);
-    if (username) {
-      console.log(`[${getTimestamp()}] ${username} disconnected`);
-      // Notifying all connected clients
-      wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(`${username} has left`);
-        }
-      });
-      clients.delete(ws);
-    }
-  });
+    socket.on('disconnect', () => {
+        console.log(`Client disconnected ${new Date().toLocaleString()}`, socket.name);
+    });
+
+});
+server.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
 });
 
-console.log(`WebSocket server running on port ${PORT}`);
+
+

@@ -1,5 +1,0 @@
-Name: Vrajkumar Shah
-College: Dharmsinh Desai University, Nadiad
-Field: Computer Science Engineering
-Interests: Web Development, DevOps, Cloud
-Favorite Film: Spider-Man

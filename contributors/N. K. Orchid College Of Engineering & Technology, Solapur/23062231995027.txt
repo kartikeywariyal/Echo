@@ -1,3 +1,0 @@
-Name: Aditya Shirsatrao
-Bio: I pretend I know Java, Spring Boot, and React. The compiler, debugger, and bugs tell a different story ;)
-Favorite Film: 3 Idiots

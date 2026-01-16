@@ -1,5 +1,0 @@
-Name: Om Maheshwari
-College: ABES Engineering College
-Field: Computer Science | Full Stack | MERN
-Interests: Web development, problem solving, open source
-Favorite Film: 3 idiots

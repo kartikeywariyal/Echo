@@ -1,27 +1,35 @@
 package main
 
 import (
-	"flag"
+	"bufio"
 	"fmt"
+	"log"
+	"os"
+	"strings"
+
+	"Echo/client/chat"
 )
 
 func main() {
-	serverURL := flag.String("server", "localhost:8080", "Server URL")
+	// Ask user for username
+	Reader := bufio.NewReader(os.Stdin)
+	fmt.Print("Enter your username: ")
 
-	flag.Parse()
-
-	fmt.Println("Connecting to server...")
-
-	username := getUsername()
+	username, err := Reader.ReadString('\n')
+	if err != nil {
+		log.Fatal("Error reading username: ", err)
+	}
+	username = strings.TrimSpace(username)
 
 	if username == "" {
-		fmt.Println("Username cannot be empty")
-		return
+		log.Fatal("Username cannot be empty")
 	}
+	serverURL := "http://localhost:" + os.Getenv("PORT")
 
-	err := connectToEchoServer(*serverURL, username)
-	if err != nil {
-		fmt.Println(err)
-		return
+	fmt.Printf("Connecting to server at %s...\n", serverURL)
+
+	// Connect to the server and start chat
+	if err := chat.Connect(serverURL, username); err != nil {
+		log.Fatal("Failed to connect: ", err)
 	}
 }

@@ -1,4 +1,0 @@
-Name: Tarun Kumar
-College: LCET
-Interests: Full Stack Development
-Favorite Film: Interstellar
