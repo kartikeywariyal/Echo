@@ -24,7 +24,13 @@ func main() {
 	if username == "" {
 		log.Fatal("Username cannot be empty")
 	}
-	serverURL := "http://localhost:" + os.Getenv("PORT")
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8081"
+	}
+
+	serverURL := "ws://localhost:" + port
 
 	fmt.Printf("Connecting to server at %s...\n", serverURL)
 

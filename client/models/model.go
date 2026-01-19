@@ -1,10 +1,10 @@
-package model
+package models
 
 import "time"
 
 type MsgModel struct {
 	UserName  string
-	content   string
+	Content   string
 	TimeStamp time.Time
 	Type      string
 }
