@@ -39,6 +39,4 @@ func main() {
 		log.Fatal("Failed to connect: ", err)
 	}
 
-	//db.ConnectMongo("mongodb+srv://kartikeywariyal:kartik%4012345@cluster0.envmfus.mongodb.net/")
-
 }
