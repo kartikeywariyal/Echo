@@ -38,4 +38,7 @@ func main() {
 	if err := chat.Connect(serverURL, username); err != nil {
 		log.Fatal("Failed to connect: ", err)
 	}
+
+	//db.ConnectMongo("mongodb+srv://kartikeywariyal:kartik%4012345@cluster0.envmfus.mongodb.net/")
+
 }

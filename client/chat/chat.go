@@ -1,7 +1,7 @@
 package chat
 
 import (
-	"Echo/client/models"
+	Models "Echo/client/models"
 	"bufio"
 	"encoding/json"
 	"fmt"
@@ -22,7 +22,7 @@ func Connect(serverURL string, username string) error {
 
 	defer conn.Close()
 
-	joinMsg := models.MsgModel{
+	joinMsg := Models.MsgModel{
 		UserName:  username,
 		Content:   fmt.Sprintf("%s has joined the chat", username),
 		TimeStamp: time.Now(),
@@ -38,7 +38,7 @@ func Connect(serverURL string, username string) error {
 				fmt.Printf("\nDisconnected from server: %v\n", err)
 				os.Exit(0)
 			}
-			var received models.MsgModel
+			var received Models.MsgModel
 			if err := json.Unmarshal(msg, &received); err != nil {
 				continue
 			}
@@ -70,7 +70,7 @@ func Connect(serverURL string, username string) error {
 			continue
 		}
 
-		msg := models.MsgModel{
+		msg := Models.MsgModel{
 			UserName:  username,
 			Content:   content,
 			TimeStamp: time.Now(),
