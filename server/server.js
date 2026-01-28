@@ -35,8 +35,6 @@ ws.on('connection', (ws) => {
             });
             return;
         }
-
-        // Normal chat message
         if (typeof content === 'string' && content.trim() !== '') {
             const effectiveName = (typeof userName === 'string' && userName.trim() !== '')
                 ? userName.trim()

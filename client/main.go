@@ -1,42 +1,27 @@
 package main
 
 import (
-	"bufio"
-	"fmt"
+	db "Echo/client/db"
+	Models "Echo/client/models"
 	"log"
 	"os"
-	"strings"
 
-	"Echo/client/chat"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	// Ask user for username
-	Reader := bufio.NewReader(os.Stdin)
-	fmt.Print("Enter your username: ")
-
-	username, err := Reader.ReadString('\n')
+	err := godotenv.Load("../.env")
 	if err != nil {
-		log.Fatal("Error reading username: ", err)
+		log.Fatal("Error loading .env file")
 	}
-	username = strings.TrimSpace(username)
-
-	if username == "" {
-		log.Fatal("Username cannot be empty")
-	}
-
 	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8081"
-	}
-
+	db.ConnectMongo(os.Getenv("DB_CONNECTION_STRING"))
 	serverURL := "ws://localhost:" + port
-
-	fmt.Printf("Connecting to server at %s...\n", serverURL)
-
-	// Connect to the server and start chat
-	if err := chat.Connect(serverURL, username); err != nil {
-		log.Fatal("Failed to connect: ", err)
+	Model := Models.InitialModel(serverURL)
+	p := tea.NewProgram(Model)
+	if _, err := p.Run(); err != nil {
+		log.Fatal(err)
 	}
 
 }

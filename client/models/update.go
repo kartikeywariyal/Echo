@@ -3,63 +3,115 @@ package Models
 import (
 	"fmt"
 	"log"
-	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func (m ViewModel) updateViewport(width, height int) ViewModel {
-	m.Viewport.Width = width
-	m.Viewport.Height = height
-	msgs, err := getAllMessages()
-	if err != nil {
-		log.Fatal("Error getting messages: ", err)
-	}
-	for _, msg := range msgs {
-		m.Content += fmt.Sprintf("[%s] %s: %s\n", msg.TimeStamp.Format("15:04"), msg.UserName, msg.Content)
-	}
-	m.Viewport.SetContent(m.Content)
-	return m
-}
-
-func (m LoginModel) updateLogin(msg tea.Msg) LoginModel {
+func (m OriginalModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd = nil
+	var vpCmd tea.Cmd = nil
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.ViewModel.Viewport.Width = msg.Width
+		if msg.Height > 12 {
+			m.ViewModel.Viewport.Height = msg.Height - 12
+		}
+		m.ViewModel.Viewport, vpCmd = m.ViewModel.Viewport.Update(msg)
+		return m, tea.Batch(vpCmd, m.listenForViewportUpdates())
+	case ViewportUpdateMsg:
+		m.ViewModel.Viewport.SetContent(msg.Content)
+		m.ViewModel.Viewport.GotoBottom()
+		return m, m.listenForViewportUpdates()
 	case tea.KeyMsg:
 		switch msg.String() {
+		case "ctrl+c":
+			if m.Conn != nil {
+				m.Conn.Close()
+			}
+			return m, tea.Quit
+		case "tab":
+			if m.State == 1 {
+				m.LoginModel.Block = (m.LoginModel.Block + 1) % 2
+				if m.LoginModel.Block == 0 {
+					m.LoginModel.Username.Focus()
+					m.LoginModel.Password.Blur()
+				} else {
+					m.LoginModel.Username.Blur()
+					m.LoginModel.Password.Focus()
+				}
+			}
+			if m.State == 2 {
+				m.State = 3
+				m.SendMsgModel.Content.Focus()
+			}
+			if m.State == 3 {
+				m.State = 2
+				m.SendMsgModel.Content.Blur()
+			}
 		case "enter":
-			if strings.TrimSpace(m.Username.Value()) == "" || strings.TrimSpace(m.Password.Value()) == "" {
-				fmt.Println("Username and Password cannot be empty")
-				return m
-			}
-			//check in db
-			if err := UserExists(m.Username.Value(), m.Password.Value()); err != nil {
-				log.Fatal("User already exists: ", err)
-			}
+			if m.State == 1 {
+				username := m.LoginModel.Username.Value()
+				password := m.LoginModel.Password.Value()
 
-			if err := CreateUser(m.Username.Value(), m.Password.Value()); err != nil {
-				log.Fatal("Error creating user: ", err)
+				if err := UserExists(username, password); err == nil {
+					m.LoginModel.Block = 0
+					m.LoginModel.Username.SetValue("")
+					m.LoginModel.Password.SetValue("")
+					m.LoginModel.Username.Focus()
+					m.LoginModel.Password.Blur()
+					fmt.Println("User Already Exists. Please try again.")
+					return m, nil
+				}
+				err := CreateUser(username, password)
+				conn, err := Wbconnect(m.ServerURL)
+				m.Conn = conn
+				m.SendMsgModel.UserName = username
+				if err != nil {
+					log.Fatal("Error creating user:", err)
+				}
+
+				m.State = 2
+				msg, err := getAllMessages()
+				if err != nil {
+					log.Fatal("Error fetching messages:", err)
+				}
+				m.ViewModel.Viewport.SetContent(msg)
+				m.ViewModel.Viewport.GotoBottom()
+				return m, tea.Batch(m.listenForViewportUpdates(), m.startMessageListener())
 			}
-			fmt.Println("User created successfully!")
-			return m
+			if m.State == 2 {
+				msgContent := m.SendMsgModel.Content.Value()
+				if msgContent != "" {
+					err := SendMsg(m.SendMsgModel.UserName, m.SendMsgModel.Content)
+					if err != nil {
+						log.Println("Error sending message:", err)
+					}
+					m.SendMsgModel.Content.SetValue("")
+				}
+				msg := MsgModel{
+					UserName:  m.SendMsgModel.UserName,
+					Content:   msgContent,
+					TimeStamp: time.Now(),
+					Type:      "message",
+				}
+				if err := m.Conn.WriteJSON(msg); err != nil {
+					log.Fatal("Error sending message via websocket:", err)
+				}
+				msgGet, _ := getAllMessages()
+				m.ViewModel.Viewport.SetContent(msgGet)
+				m.ViewModel.Viewport.GotoBottom()
+			}
 		}
 	}
-	return m
-}
-func (m SendMsgModel) updateSendMsg(msg tea.Msg) SendMsgModel {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "enter":
-			if strings.TrimSpace(m.Content.Value()) == "" {
-				fmt.Println("Message cannot be empty")
-				return m
-			}
-			if err := SendMsg(m.UserName, m.Content); err != nil {
-				log.Fatal("Error sending message: ", err)
-			}
 
-			m.Content.SetValue("")
-		}
+	if m.State == 1 {
+		m.LoginModel.Username, cmd = m.LoginModel.Username.Update(msg)
+		m.LoginModel.Password, cmd = m.LoginModel.Password.Update(msg)
 	}
-	return m
+	if m.State == 2 {
+		m.SendMsgModel.Content, cmd = m.SendMsgModel.Content.Update(msg)
+		m.ViewModel.Viewport, vpCmd = m.ViewModel.Viewport.Update(msg)
+	}
+	return m, tea.Batch(cmd, vpCmd, m.listenForViewportUpdates())
 }
