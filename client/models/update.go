@@ -1,7 +1,6 @@
 package Models
 
 import (
-	"fmt"
 	"log"
 	"time"
 
@@ -55,15 +54,18 @@ func (m OriginalModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				password := m.LoginModel.Password.Value()
 
 				if err := UserExists(username, password); err == nil {
-					m.LoginModel.Block = 0
-					m.LoginModel.Username.SetValue("")
-					m.LoginModel.Password.SetValue("")
-					m.LoginModel.Username.Focus()
-					m.LoginModel.Password.Blur()
-					fmt.Println("User Already Exists. Please try again.")
-					return m, nil
+					if passwordCorrect, _ := ValidateUser(username, password); !passwordCorrect {
+						log.Fatal("Incorrect password. Please try again.")
+						return m, nil
+					}
+				} else {
+					err := CreateUser(username, password)
+					if err != nil {
+						log.Fatal("Error creating user:", err)
+						return m, nil
+					}
 				}
-				err := CreateUser(username, password)
+
 				conn, err := Wbconnect(m.ServerURL)
 				m.Conn = conn
 				m.SendMsgModel.UserName = username

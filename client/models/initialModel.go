@@ -89,7 +89,23 @@ func getAllMessages() (string, error) {
 	}
 	return msgs, nil
 }
-
+func ValidateUser(username, password string) (bool, error) {
+	collection := db.GetCollection("Echo", "Users")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	filter := map[string]interface{}{
+		"username": username,
+	}
+	var result map[string]interface{}
+	err := collection.FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		return false, err
+	}
+	if result["password"] == password {
+		return true, nil
+	}
+	return false, nil
+}
 func InitialModel(serverURL string) OriginalModel {
 	LoginModel := new(LoginModel)
 	UsernameInput := textinput.New()
